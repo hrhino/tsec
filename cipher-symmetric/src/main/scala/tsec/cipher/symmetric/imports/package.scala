@@ -4,11 +4,14 @@ import tsec.cipher.common._
 import tsec.cipher.common.padding.NoPadding
 import tsec.common.{CryptoTag, JKeyGenerator}
 import javax.crypto.{SecretKey => JSecretKey}
+
 import cats.evidence.Is
+import tsec.cipher.symmetric.imports.aead.JCAAEADPure
 
 package object imports {
-  type AEADCipherText[A]    = CipherText[A, GCM, NoPadding]
-  type EncryptorInstance[A] = JCASymmetricCipher[A, CTR, NoPadding]
+  type AEADCipherText[A]         = CipherText[A, GCM, NoPadding]
+  type EncryptorInstance[A]      = JCASymmetricCipher[A, CTR, NoPadding]
+  type GCMAuthEncryptor[F[_], A] = JCAAEADPure[F, A, GCM, NoPadding]
 
   /** Typeclass for propagating symmetric key algorithm information
     *

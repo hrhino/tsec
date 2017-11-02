@@ -18,23 +18,24 @@ class EncryptedCookieAuthenticatorSpec extends RequestAuthenticatorSpec[AuthEncr
 
   implicit def cookiebackingStore[A: AuthEncryptor] = dummyBackingStore[IO, UUID, AuthEncryptedCookie[A, Int]](_.id)
 
-  def genStatefulAuthenticator[A](
+  def genStatefulAuthenticator[A: AEADCipher](
       implicit authEncryptor: AuthEncryptor[A],
       keygen: CipherKeyGen[A],
       store: BackingStore[IO, UUID, AuthEncryptedCookie[A, Int]]
   ): AuthSpecTester[A, AuthEncryptedCookie[?, Int]] = {
     val dummyStore = dummyBackingStore[IO, Int, DummyUser](_.id)
-    val authenticator = EncryptedCookieAuthenticator.withBackingStore[IO, A, Int, DummyUser](
-      TSecCookieSettings(cookieName, false, expiryDuration = 10.minutes, maxIdle = Some(10.minutes)),
-      store,
-      dummyStore,
-      keygen.generateKeyUnsafe()
-    )
+    val authenticator = EncryptedCookieAuthenticator
+      .buildStateful[IO, A, Int, DummyUser](
+        TSecCookieSettings(cookieName, false, expiryDuration = 10.minutes, maxIdle = Some(10.minutes)),
+        store,
+        dummyStore,
+        keygen.generateKeyUnsafe()
+      )
+      .unsafeRunSync() //Ignore the fact this is unsafe for tests
     new AuthSpecTester[A, AuthEncryptedCookie[?, Int]](authenticator, dummyStore) {
 
       def embedInRequest(request: Request[IO], authenticator: AuthEncryptedCookie[A, Int]): Request[IO] =
         request.addCookie(authenticator.toCookie)
-
 
       def expireAuthenticator(b: AuthEncryptedCookie[A, Int]): OptionT[IO, AuthEncryptedCookie[A, Int]] = {
         val now     = Instant.now()
@@ -50,27 +51,30 @@ class EncryptedCookieAuthenticatorSpec extends RequestAuthenticatorSpec[AuthEncr
 
       def wrongKeyAuthenticator: OptionT[IO, AuthEncryptedCookie[A, Int]] =
         EncryptedCookieAuthenticator
-          .withBackingStore[IO, A, Int, DummyUser](
+          .buildStateful[IO, A, Int, DummyUser](
             TSecCookieSettings(cookieName, false, expiryDuration = 10.minutes, maxIdle = Some(10.minutes)),
             store,
             dummyStore,
             keygen.generateKeyUnsafe()
           )
+          .unsafeRunSync()
           .create(123)
     }
   }
 
-  def genStatelessAuthenticator[A](
+  def genStatelessAuthenticator[A: AEADCipher](
       implicit authEncryptor: AuthEncryptor[A],
       keygen: CipherKeyGen[A]
   ): AuthSpecTester[A, AuthEncryptedCookie[?, Int]] = {
     val dummyStore = dummyBackingStore[IO, Int, DummyUser](_.id)
     val secretKey  = keygen.generateKeyUnsafe()
-    val authenticator = EncryptedCookieAuthenticator.stateless[IO, A, Int, DummyUser](
-      TSecCookieSettings(cookieName, false, expiryDuration = 10.minutes, maxIdle = Some(10.minutes)),
-      dummyStore,
-      secretKey
-    )
+    val authenticator = EncryptedCookieAuthenticator
+      .buildStateless[IO, A, Int, DummyUser](
+        TSecCookieSettings(cookieName, false, expiryDuration = 10.minutes, maxIdle = Some(10.minutes)),
+        dummyStore,
+        secretKey
+      )
+      .unsafeRunSync()
     new AuthSpecTester[A, AuthEncryptedCookie[?, Int]](authenticator, dummyStore) {
 
       def embedInRequest(request: Request[IO], authenticator: AuthEncryptedCookie[A, Int]): Request[IO] =
@@ -111,11 +115,12 @@ class EncryptedCookieAuthenticatorSpec extends RequestAuthenticatorSpec[AuthEncr
 
       def wrongKeyAuthenticator: OptionT[IO, AuthEncryptedCookie[A, Int]] =
         EncryptedCookieAuthenticator
-          .stateless[IO, A, Int, DummyUser](
+          .buildStateless[IO, A, Int, DummyUser](
             TSecCookieSettings(cookieName, false, expiryDuration = 10.minutes, maxIdle = Some(10.minutes)),
             dummyStore,
             keygen.generateKeyUnsafe()
           )
+          .unsafeRunSync()
           .create(123)
     }
   }

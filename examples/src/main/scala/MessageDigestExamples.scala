@@ -5,7 +5,7 @@ object MessageDigestExamples {
   import tsec.messagedigests._
   import tsec.messagedigests.imports._ //For this example, we will use our byteutil helpers
 
-  /** To hash any class, like String, you must supply an implicit `CryptoPickler[A].
+  /** To hash any class, like String, you must supply an implicit CryptoPickler[A].
     * As an example, you can use, for strings, the default string pickler, which serializes the string to utf-8 bytes
     *
     * A crypto pickler is simply a value class with a function T => Array[Bytes]. i.e:

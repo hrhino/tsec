@@ -18,9 +18,12 @@ sealed abstract class Encryptor[A: SymmetricCipher] {
 
 object Encryptor {
   implicit val defaultEncryptor: Encryptor[AES128] = DefaultEncryptor
+  implicit val mediumEncryptor: Encryptor[AES192] = MediumEncryptor
   implicit val strongEncryptor: Encryptor[AES256]  = StrongEncryptor
 }
 
 object DefaultEncryptor extends Encryptor[AES128]
+
+object MediumEncryptor extends Encryptor[AES192]
 
 object StrongEncryptor extends Encryptor[AES256]

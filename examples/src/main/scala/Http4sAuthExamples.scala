@@ -95,12 +95,12 @@ object Http4sAuthExamples {
   val key: SecretKey[AES128] = AES128.generateKeyUnsafe() //Our encryption key
 
   val encryptedCookieAuth =
-    EncryptedCookieAuthenticator.withBackingStore(
+    EncryptedCookieAuthenticator.buildStateful(
       settings,
       cookieBackingStore,
       userStore,
       key
-    )
+    ).unsafeRunSync() //Should only be run once for your entire program!!!
 
   val Auth =
     SecuredRequestHandler.encryptedCookie(encryptedCookieAuth)

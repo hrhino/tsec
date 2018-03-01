@@ -1,86 +1,25 @@
-package tsec.cipher.symmetric
+package tsec
+package cipher.symmetric
+
+import util._
 
 package object core {
   type Iv[A] = Iv.Type[A]
-
-  object Iv {
-    type Type[A] <: Array[Byte]
-
-    def apply[A](value: Array[Byte]): Iv[A] = value.asInstanceOf[Iv[A]]
-    def subst[A]: IvPartiallyApplied[A]     = new IvPartiallyApplied[A]
-
-    private[core] final class IvPartiallyApplied[A](val dummy: Boolean = true) extends AnyVal {
-      def apply[F[_]](value: F[Array[Byte]]): F[Iv[A]] =
-        value.asInstanceOf[F[Iv[A]]]
-    }
-
-    def unsubst[A]: PartiallyUnapplied[A] = new PartiallyUnapplied[A]
-
-    private[tsec] final class PartiallyUnapplied[A](val dummy: Boolean = true) extends AnyVal {
-      def apply[F[_]](value: F[Iv[A]]): F[Array[Byte]] = value.asInstanceOf[F[Array[Byte]]]
-    }
-  }
+  object Iv extends newt.ByteArrayHK
 
   type RawCipherText[A] = RawCipherText.Type[A]
-
-  object RawCipherText {
-    type Type[A] <: Array[Byte]
-
-    def apply[A](value: Array[Byte]): RawCipherText[A] = value.asInstanceOf[RawCipherText[A]]
-    def subst[A]: RawCTPartiallyApplied[A]             = new RawCTPartiallyApplied[A]
-
-    private[core] final class RawCTPartiallyApplied[A](val dummy: Boolean = true) extends AnyVal {
-      def apply[F[_]](value: F[Array[Byte]]): F[RawCipherText[A]] =
-        value.asInstanceOf[F[RawCipherText[A]]]
-    }
-
-    def unsubst[A]: PartiallyUnapplied[A] = new PartiallyUnapplied[A]
-
-    private[tsec] final class PartiallyUnapplied[A](val dummy: Boolean = true) extends AnyVal {
-      def apply[F[_]](value: F[RawCipherText[A]]): F[Array[Byte]] = value.asInstanceOf[F[Array[Byte]]]
-    }
-  }
+  object RawCipherText extends newt.ByteArrayHK
 
   type PlainText = PlainText.Type
-
-  object PlainText {
-    type Type <: Array[Byte]
-
-    def apply(value: Array[Byte]): PlainText             = value.asInstanceOf[PlainText]
-    def subst[F[_]](value: F[Array[Byte]]): F[PlainText] = value.asInstanceOf[F[PlainText]]
-  }
+  object PlainText extends newt.ByteArray
 
   type AAD = AAD.Type
-
-  object AAD {
-    type Type <: Array[Byte]
-
-    def apply(value: Array[Byte]): AAD             = value.asInstanceOf[AAD]
-    def subst[F[_]](value: F[Array[Byte]]): F[AAD] = value.asInstanceOf[F[AAD]]
-  }
+  object AAD extends newt.ByteArray
 
   type AuthTag[A] = AuthTag.Type[A]
+  object AuthTag extends newt.ByteArrayHK
 
-  object AuthTag {
-    type Type[A] <: Array[Byte]
-
-    def apply[A](value: Array[Byte]): AuthTag[A] = value.asInstanceOf[AuthTag[A]]
-
-    def subst[A]: AuthTagPartiallyApplied[A] = new AuthTagPartiallyApplied[A]
-
-    private[core] final class AuthTagPartiallyApplied[A](val dummy: Boolean = true) extends AnyVal {
-      def apply[F[_]](value: F[Array[Byte]]): F[AuthTag[A]] =
-        value.asInstanceOf[F[AuthTag[A]]]
-    }
-
-    def unsubst[A]: PartiallyUnapplied[A] = new PartiallyUnapplied[A]
-
-    private[tsec] final class PartiallyUnapplied[A](val dummy: Boolean = true) extends AnyVal {
-      def apply[F[_]](value: F[AuthTag[A]]): F[Array[Byte]] = value.asInstanceOf[F[Array[Byte]]]
-    }
-  }
-
-  case class CipherText[A](content: RawCipherText[A], nonce: Iv[A]) {
+  final case class CipherText[A](content: RawCipherText[A], nonce: Iv[A]) {
     @deprecated("use toConcatenated", "0.0.1-M10")
     def toSingleArray: Array[Byte] = toConcatenated
 
